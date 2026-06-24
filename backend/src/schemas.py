@@ -6,7 +6,6 @@ from datetime import datetime
 class JobCreate(BaseModel):
 
     type : Literal["email","report","ai_analysis"]
-    priority : Literal["high","normal","low"]
     payload : Dict[str,Any]
 
 class JobResponse(BaseModel):

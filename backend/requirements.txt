@@ -2,7 +2,7 @@ fastapi
 uvicorn
 celery[redis]
 sqlalchemy
-psycopg2-binary
+asyncpg
 alembic
 pydantic
 python-dotenv
