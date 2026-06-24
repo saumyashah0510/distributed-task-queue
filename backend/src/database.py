@@ -16,8 +16,16 @@ if SQLALCHEMY_DATABASE_URL.startswith("postgresql://"):
 elif SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
 
+# Neon appends ?sslmode=require which asyncpg doesn't understand. 
+# We strip it out and manually pass ssl=True to the engine.
+if "?" in SQLALCHEMY_DATABASE_URL:
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.split("?")[0]
+
 # Create the async engine
-engine = create_async_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_async_engine(
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"ssl": True}
+)
 
 # Configure the async session
 SessionLocal = sessionmaker(
