@@ -8,6 +8,7 @@ from datetime import datetime
 from ..database import get_db
 from .. import models
 from .. import schemas
+from ..worker import email_job,report_job,ai_job
 
 router = APIRouter(
     prefix="/api/jobs",
@@ -41,6 +42,14 @@ async def create_job(job_in: schemas.JobCreate, db: AsyncSession = Depends(get_d
     db.add(new_job)
     await db.commit()
     await db.refresh(new_job)
+
+    # triggering celery
+    if job_in.type == "email":
+        email_job.apply_async(args = [job_id, job_in.payload], queue = target_queue)
+    elif job_in.type == "report":
+        report_job.apply_async(args = [job_id, job_in.payload], queue = target_queue)
+    elif job_in.type == "ai_analysis":
+        ai_job.apply_async(args = [job_id, job_in.payload], queue = target_queue)    
 
     return new_job
 
