@@ -1,20 +1,28 @@
-import os, time
+import os, time, ssl, asyncio
 from dotenv import load_dotenv
 from celery import Celery
 from kombu import Queue
+from sqlalchemy import select
+from datetime import datetime,timezone
 
-from .database import SessionLocal
+from .database import SessionLocal, engine
 from . import models
 
 load_dotenv()
 
 redis_url = os.getenv("REDIS_URL")
 
+
 celery_app = Celery(
     "tasks",
     broker = redis_url,
     backend = redis_url
 )
+
+# Upstash strictly requires SSL. We must tell Celery to use it.
+if redis_url.startswith("rediss://"):
+    celery_app.conf.broker_use_ssl = {'ssl_cert_reqs': ssl.CERT_NONE}
+    celery_app.conf.redis_backend_use_ssl = {'ssl_cert_reqs': ssl.CERT_NONE}
 
 print("Celery app initialized. Broker :", redis_url)
 
@@ -31,41 +39,133 @@ celery_app.conf.task_routes = {
 }
 
 
-@celery_app.task(name = 'src.worker.email_job')
-def email_job(job_id : str, payload : dict):
+async def update_job_status(job_id : str, status : str, result : dict = None, error : str = None,
+worker_id : str = None, retry_count : int = None):
+    async with SessionLocal() as db:
+        res = await db.execute(select(models.JobModel).filter(models.JobModel.id == job_id))   
 
-    print(f"[{job_id}] 📧 STARTING EMAIL JOB...")
-    print(f"[{job_id}] Payload received : {payload}")
+        job = res.scalars().first()
+        if job :
+            job.status = status
+            if result : 
+                job.result = result 
+            if error : 
+                job.error = error
+            if worker_id : 
+                job.worker_id = worker_id
+            if retry_count is not None :
+                job.retry_count = retry_count    
 
-    time.sleep(3)
+            now = datetime.utcnow()
+            if status == "STARTED" and not job.started_at :
+                job.started_at = now    
+            elif status in ["SUCCESS", "FAILURE"]:
+                job.completed_at = now    
+            await db.commit()
+            
+    await engine.dispose()    
 
-    print(f"[{job_id}] ✅ Email sent successfully!")
 
-    return {"status" : "sent", "to" : payload.get("to","unknown")}
+@celery_app.task(bind=True, name='src.worker.email_job', max_retries=3)
+def email_job(self, job_id: str, payload: dict):
+    worker_id = self.request.hostname
+    current_retry = self.request.retries
+
+    asyncio.run(update_job_status(job_id, "STARTED",  retry_count=current_retry))
+    print(f"[{job_id}] 📧 STARTING EMAIL JOB (Retry {current_retry})...")
+    
+    try:
+        time.sleep(3)
+        # We can simulate an error here if "fail" is in the subject
+        if "fail" in payload.get("subject", "").lower():
+            raise ConnectionError("SMTP server timeout!")
+
+        final_result = {"status": "sent", "to": payload.get("to", "unknown")}
+        asyncio.run(update_job_status(job_id, "SUCCESS", result=final_result))
+        
+        print(f"[{job_id}] ✅ Email sent successfully!")
+        return final_result
+        
+    except Exception as e:
+        print(f"[{job_id}] ❌ ERROR: {str(e)}")
+        if self.request.retries >= self.max_retries:
+            asyncio.run(update_job_status(job_id, "FAILURE", error=str(e)))
+            print(f"[{job_id}] 💀 JOB FAILED PERMANENTLY")
+            raise e
+        print(f"[{job_id}] ♻️ Retrying in 10 seconds...")
+        raise self.retry(exc=e, countdown=10)
 
 
-@celery_app.task(name = 'src.worker.report_job')
-def report_job(job_id : str, payload : dict):
+@celery_app.task(bind=True, name='src.worker.report_job', max_retries=3)
+def report_job(self, job_id: str, payload: dict):
+    worker_id = self.request.hostname
+    current_retry = self.request.retries
 
-    print(f"[{job_id}] 📊 STARTING REPORT JOB...")
-    print(f"[{job_id}] Payload received : {payload}")
+    asyncio.run(update_job_status(job_id, "STARTED",  retry_count=current_retry))
+    print(f"[{job_id}] 📊 STARTING REPORT JOB (Retry {current_retry})...")
+    
+    try:
+        time.sleep(7)
+        fmt = payload.get("format", "pdf")
+        if fmt not in ["pdf", "csv"]:
+            raise ValueError(f"Unsupported report format: {fmt}")
 
-    time.sleep(3)
-
-    print(f"[{job_id}] ✅ Report sent successfully!")
-
-    return {"status" : "sent", "to" : payload.get("to","unknown")}
+        final_result = {
+            "status": "generated", 
+            "file_url": f"s3://reports-bucket/report_{job_id}.{fmt}",
+            "pages": 42
+        }
+        
+        asyncio.run(update_job_status(job_id, "SUCCESS", result=final_result))
+        print(f"[{job_id}] ✅ Report generated successfully!")
+        return final_result
+        
+    except Exception as e:
+        print(f"[{job_id}] ❌ ERROR: {str(e)}")
+        if self.request.retries >= self.max_retries:
+            asyncio.run(update_job_status(job_id, "FAILURE", error=str(e)))
+            print(f"[{job_id}] 💀 JOB FAILED PERMANENTLY")
+            raise e
+        print(f"[{job_id}] ♻️ Retrying in 10 seconds...")
+        raise self.retry(exc=e, countdown=10)
     
 
-@celery_app.task(name = 'src.worker.ai_job')
-def ai_job(job_id : str, payload : dict):
+@celery_app.task(bind = True,name = 'src.worker.ai_job', max_retries = 3)
+def ai_job(self, job_id : str, payload : dict):
 
-    print(f"[{job_id}] 🧠 STARTING AI JOB...")
-    print(f"[{job_id}] Payload received : {payload}")
+    worker_id = self.request.hostname
+    current_retry = self.request.retries
 
-    time.sleep(3)
+    asyncio.run(update_job_status(job_id,"STARTED",retry_count = current_retry))
 
-    print(f"[{job_id}] ✅ AI JOB completed successfully!")
+    print(f"[{job_id}] 🧠 STARTING AI JOB (Retry {current_retry})...")
 
-    return {"status" : "sent", "to" : payload.get("to","unknown")}        
+    try :
+        time.sleep(12)
+        text_to_analyze = payload.get("text", "")
+    
+        if "crash" in text_to_analyze.lower():
+            raise ValueError("AI Model encountered an unexpected error!")
+
+        final_result = {
+            "sentiment": "positive",
+            "confidence": 0.98,
+            "analyzed_word_count": len(text_to_analyze.split())
+        }
+
+        asyncio.run(update_job_status(job_id,"SUCCESS",final_result))
+
+        print(f"[{job_id}] ✅ AI JOB completed successfully!")
+        return final_result        
+
+    except Exception as e:
+        print(f"[{job_id}] ❌ ERROR: {str(e)}")
+
+        if self.request.retries >= self.max_retries :
+            asyncio.run(update_job_status(job_id,"FAILURE",error = str(e)))
+            print(f"[{job_id}] 💀 JOB FAILED PERMANENTLY")
+            raise e
+
+        print(f"[{job_id}] ♻️ Retrying in 10 seconds...")
+        raise self.retry(exc=e, countdown=10) 
 
