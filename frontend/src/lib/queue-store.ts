@@ -148,6 +148,7 @@ class Store {
           lastHeartbeat: w.last_seen ? new Date(w.last_seen + "Z").getTime() : Date.now(),
           jobsDone: w.tasks_completed || 0,
           status: w.status,
+          current_job_id: w.current_job_id,
         }));
         
         // Also fetch metrics since WebSocket is disabled on Vercel!
