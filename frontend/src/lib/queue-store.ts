@@ -144,9 +144,9 @@ class Store {
         const wData = await wRes.json();
         this.workers = wData.map((w: any) => ({
           id: w.id,
-          queue: w.queues,
-          lastHeartbeat: new Date(w.last_heartbeat + "Z").getTime(),
-          jobsDone: w.successful_jobs,
+          queue: w.queues || [],
+          lastHeartbeat: new Date(w.last_seen + "Z").getTime(),
+          jobsDone: w.tasks_completed || 0,
           status: w.status,
         }));
         
