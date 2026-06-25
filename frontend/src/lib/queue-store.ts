@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
 
+// Use environment variables for production, fallback to localhost for local dev
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+// Convert http/https to ws/wss for the WebSocket URL
+const WS_BASE_URL = API_BASE_URL.replace(/^http/, 'ws');
+
 export type JobType = "email" | "report" | "ai_analysis"; // Our backend type is ai_analysis
 export type Priority = "high" | "normal" | "low";
 export type JobStatus = "pending" | "active" | "completed" | "failed" | "revoked";
