@@ -22,7 +22,7 @@ PRIORITY_MAP = {
     "ai_analysis": "low"
 }
 
-@router.post("/", response_model=schemas.JobResponse)
+@router.post("", response_model=schemas.JobResponse)
 async def create_job(job_in: schemas.JobCreate, db: AsyncSession = Depends(get_db)):
 
     job_id = str(uuid.uuid4())
@@ -55,7 +55,7 @@ async def create_job(job_in: schemas.JobCreate, db: AsyncSession = Depends(get_d
     return new_job
 
 
-@router.get("/", response_model=List[schemas.JobResponse])
+@router.get("", response_model=List[schemas.JobResponse])
 async def list_jobs(
     status: Optional[str] = None,
     type: Optional[str] = None,

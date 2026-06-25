@@ -126,7 +126,7 @@ class Store {
 
   async fetchJobs() {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/jobs/`);
+      const res = await fetch(`${API_BASE_URL}/api/jobs`);
       const data = await res.json();
       
       // Map backend data to frontend interface
@@ -171,7 +171,7 @@ class Store {
   async submit(type: JobType, priority?: Priority, payload: Record<string, unknown> = {}) {
     const p = priority ?? TYPE_META[type].defaultPriority;
     try {
-      await fetch(`${API_BASE_URL}/api/jobs/`, {
+      await fetch(`${API_BASE_URL}/api/jobs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -194,7 +194,7 @@ class Store {
       const p = TYPE_META[t].defaultPriority;
       const actualPayload = customPayload || { batch: true, i };
       requests.push(
-        fetch(`${API_BASE_URL}/api/jobs/`, {
+        fetch(`${API_BASE_URL}/api/jobs`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
