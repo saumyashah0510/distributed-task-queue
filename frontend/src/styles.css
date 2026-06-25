@@ -1,0 +1,295 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  --radius: 0.375rem;
+
+  /* Paper background, near-black ink */
+  --background: oklch(0.965 0.006 85);
+  --foreground: oklch(0.16 0.01 60);
+
+  --card: oklch(0.99 0.003 85);
+  --card-foreground: oklch(0.16 0.01 60);
+  --popover: oklch(0.99 0.003 85);
+  --popover-foreground: oklch(0.16 0.01 60);
+
+  /* Deep brand red */
+  --primary: oklch(0.46 0.18 25);
+  --primary-foreground: oklch(0.98 0.005 85);
+
+  --secondary: oklch(0.93 0.006 85);
+  --secondary-foreground: oklch(0.18 0.01 60);
+
+  --muted: oklch(0.94 0.005 85);
+  --muted-foreground: oklch(0.46 0.012 60);
+
+  /* Black as accent */
+  --accent: oklch(0.18 0.01 60);
+  --accent-foreground: oklch(0.98 0.005 85);
+
+  --destructive: oklch(0.46 0.18 25);
+  --destructive-foreground: oklch(0.98 0.005 85);
+  --success: oklch(0.52 0.13 150);
+  --success-foreground: oklch(0.98 0.005 85);
+  --warning: oklch(0.68 0.15 70);
+  --warning-foreground: oklch(0.16 0.01 60);
+  --info: oklch(0.42 0.06 240);
+  --info-foreground: oklch(0.98 0.005 85);
+
+  --border: oklch(0.86 0.008 85);
+  --input: oklch(0.88 0.008 85);
+  --ring: oklch(0.46 0.18 25);
+
+  --chart-1: oklch(0.46 0.18 25);     /* brand red */
+  --chart-2: oklch(0.22 0.01 60);     /* near-black */
+  --chart-3: oklch(0.58 0.025 60);    /* warm gray */
+  --chart-4: oklch(0.55 0.13 150);    /* sage */
+  --chart-5: oklch(0.62 0.12 70);     /* ochre */
+
+  --sidebar: oklch(0.95 0.006 85);
+  --sidebar-foreground: oklch(0.16 0.01 60);
+  --sidebar-primary: oklch(0.46 0.18 25);
+  --sidebar-primary-foreground: oklch(0.98 0.005 85);
+  --sidebar-accent: oklch(0.92 0.006 85);
+  --sidebar-accent-foreground: oklch(0.18 0.01 60);
+  --sidebar-border: oklch(0.86 0.008 85);
+  --sidebar-ring: oklch(0.46 0.18 25);
+
+  /* Subtle blueprint grid */
+  --grid-line: oklch(0.16 0.01 60 / 0.06);
+  --shadow-soft: 0 1px 2px oklch(0.16 0.01 60 / 0.04), 0 12px 28px -16px oklch(0.16 0.01 60 / 0.12);
+  --shadow-card: 0 1px 0 oklch(0.16 0.01 60 / 0.04), 0 8px 24px -16px oklch(0.16 0.01 60 / 0.18);
+  --shadow-brand: 0 8px 28px -10px oklch(0.46 0.18 25 / 0.35);
+}
+
+.dark {
+  --background: oklch(0.16 0.008 60);
+  --foreground: oklch(0.95 0.006 85);
+
+  --card: oklch(0.2 0.01 60);
+  --card-foreground: oklch(0.95 0.006 85);
+  --popover: oklch(0.2 0.01 60);
+  --popover-foreground: oklch(0.95 0.006 85);
+
+  --primary: oklch(0.58 0.19 25);
+  --primary-foreground: oklch(0.98 0.005 85);
+
+  --secondary: oklch(0.24 0.01 60);
+  --secondary-foreground: oklch(0.95 0.006 85);
+
+  --muted: oklch(0.23 0.01 60);
+  --muted-foreground: oklch(0.66 0.012 60);
+
+  --accent: oklch(0.95 0.006 85);
+  --accent-foreground: oklch(0.16 0.008 60);
+
+  --destructive: oklch(0.62 0.19 25);
+  --destructive-foreground: oklch(0.98 0.005 85);
+  --success: oklch(0.68 0.13 150);
+  --success-foreground: oklch(0.16 0.008 60);
+  --warning: oklch(0.78 0.14 70);
+  --warning-foreground: oklch(0.16 0.008 60);
+  --info: oklch(0.66 0.09 240);
+  --info-foreground: oklch(0.16 0.008 60);
+
+  --border: oklch(0.3 0.012 60);
+  --input: oklch(0.3 0.012 60);
+  --ring: oklch(0.58 0.19 25);
+
+  --chart-1: oklch(0.62 0.19 25);
+  --chart-2: oklch(0.85 0.006 85);
+  --chart-3: oklch(0.58 0.025 60);
+  --chart-4: oklch(0.68 0.13 150);
+  --chart-5: oklch(0.72 0.12 70);
+
+  --sidebar: oklch(0.18 0.008 60);
+  --sidebar-foreground: oklch(0.95 0.006 85);
+  --sidebar-primary: oklch(0.58 0.19 25);
+  --sidebar-primary-foreground: oklch(0.98 0.005 85);
+  --sidebar-accent: oklch(0.24 0.01 60);
+  --sidebar-accent-foreground: oklch(0.95 0.006 85);
+  --sidebar-border: oklch(0.3 0.012 60);
+  --sidebar-ring: oklch(0.58 0.19 25);
+
+  --grid-line: oklch(0.95 0.006 85 / 0.05);
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.4), 0 12px 28px -16px oklch(0 0 0 / 0.6);
+  --shadow-card: 0 1px 0 oklch(0 0 0 / 0.3), 0 8px 24px -16px oklch(0 0 0 / 0.6);
+  --shadow-brand: 0 8px 28px -10px oklch(0.58 0.19 25 / 0.45);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html, body {
+    font-family: var(--font-sans);
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+    font-weight: 800;
+  }
+}
+
+@utility font-display { font-family: var(--font-display); }
+@utility font-mono { font-family: var(--font-mono); }
+
+@utility shadow-soft { box-shadow: var(--shadow-soft); }
+@utility shadow-card { box-shadow: var(--shadow-card); }
+@utility shadow-brand { box-shadow: var(--shadow-brand); }
+
+/* Blueprint paper grid */
+@utility blueprint-grid {
+  background-color: var(--color-background);
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-position: -1px -1px;
+}
+
+@utility glass {
+  background-color: color-mix(in oklab, var(--color-background) 78%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
+}
+
+/* Brand underline — like the red bar in the reference */
+@utility brand-underline {
+  position: relative;
+  display: inline-block;
+}
+@utility brand-underline {
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.12em;
+    height: 0.18em;
+    background: var(--color-primary);
+    border-radius: 2px;
+  }
+}
+
+/* Section eyebrow with leading bar */
+@utility eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+  font-weight: 600;
+}
+@utility eyebrow {
+  &::before {
+    content: "";
+    width: 28px;
+    height: 2px;
+    background: var(--color-primary);
+  }
+}
+
+@utility pulse-dot { position: relative; }
+@utility pulse-dot {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 9999px;
+    background: currentColor;
+    opacity: 0.35;
+    animation: pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.6); opacity: 0.5; }
+  80%, 100% { transform: scale(1.6); opacity: 0; }
+}
+
+@keyframes slide-up-fade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@utility animate-in-up {
+  animation: slide-up-fade 0.4s ease-out both;
+}
+
+/* Decorative offset block, like the red rectangle behind the hero image in the ref */
+@utility offset-block {
+  position: relative;
+}
+@utility offset-block {
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 16px -16px -16px 16px;
+    background: var(--color-primary);
+    border-radius: var(--radius);
+    z-index: -1;
+    opacity: 0.9;
+  }
+}

@@ -12,6 +12,13 @@ from . import models
 
 load_dotenv()
 
+# Create a persistent event loop for the worker to avoid asyncpg 'Event loop is closed' errors
+worker_loop = asyncio.new_event_loop()
+asyncio.set_event_loop(worker_loop)
+
+def run_async(coro):
+    return worker_loop.run_until_complete(coro)
+
 redis_url = os.getenv("REDIS_URL")
 
 IS_DEMO_MODE = os.getenv("DEMO_MODE","False").lower() == "true"
@@ -50,6 +57,10 @@ worker_id : str = None, retry_count : int = None):
 
         job = res.scalars().first()
         if job :
+            if job.status == "REVOKED":
+                # If the job was already revoked by the user, ignore any further worker state updates
+                return
+            
             job.status = status
             if result : 
                 job.result = result 
@@ -62,9 +73,23 @@ worker_id : str = None, retry_count : int = None):
 
             now = datetime.utcnow()
             if status == "STARTED" and not job.started_at :
-                job.started_at = now    
-            elif status in ["SUCCESS", "FAILURE"]:
-                job.completed_at = now    
+                job.started_at = now
+                if job.worker_id:
+                    worker_res = await db.execute(select(models.WorkerModel).filter(models.WorkerModel.id == job.worker_id))
+                    worker = worker_res.scalars().first()
+                    if worker:
+                        worker.current_job_id = job.id
+            elif status in ["SUCCESS", "FAILURE", "RETRY"]:
+                if status in ["SUCCESS", "FAILURE"]:
+                    job.completed_at = now
+                if job.worker_id:
+                    worker_res = await db.execute(select(models.WorkerModel).filter(models.WorkerModel.id == job.worker_id))
+                    worker = worker_res.scalars().first()
+                    if worker:
+                        if status == "SUCCESS":
+                            worker.tasks_completed = (worker.tasks_completed or 0) + 1
+                        if worker.current_job_id == job.id:
+                            worker.current_job_id = None
             await db.commit()
             
     await engine.dispose()    
@@ -75,7 +100,7 @@ def email_job(self, job_id: str, payload: dict):
     worker_id = self.request.hostname
     current_retry = self.request.retries
 
-    asyncio.run(update_job_status(job_id, "STARTED",  retry_count=current_retry))
+    run_async(update_job_status(job_id, "STARTED", worker_id=worker_id, retry_count=current_retry))
     print(f"[{job_id}] 📧 STARTING EMAIL JOB (Retry {current_retry})...")
     
     try:
@@ -88,7 +113,7 @@ def email_job(self, job_id: str, payload: dict):
             raise RuntimeError("Chaos Engineering : Random simulated failure")    
 
         final_result = {"status": "sent", "to": payload.get("to", "unknown")}
-        asyncio.run(update_job_status(job_id, "SUCCESS", result=final_result))
+        run_async(update_job_status(job_id, "SUCCESS", result=final_result))
         
         print(f"[{job_id}] ✅ Email sent successfully!")
         return final_result
@@ -99,8 +124,9 @@ def email_job(self, job_id: str, payload: dict):
             asyncio.run(update_job_status(job_id, "FAILURE", error=str(e)))
             print(f"[{job_id}] 💀 JOB FAILED PERMANENTLY")
             raise e
-        print(f"[{job_id}] ♻️ Retrying in 10 seconds...")
-        raise self.retry(exc=e, countdown=10)
+        print(f"[{job_id}] ♻️ Retrying in 5 seconds...")
+        asyncio.run(update_job_status(job_id, "RETRY"))
+        raise self.retry(exc=e, countdown=5)
 
 
 @celery_app.task(bind=True, name='src.worker.report_job', max_retries=3)
@@ -108,7 +134,7 @@ def report_job(self, job_id: str, payload: dict):
     worker_id = self.request.hostname
     current_retry = self.request.retries
 
-    asyncio.run(update_job_status(job_id, "STARTED",  retry_count=current_retry))
+    run_async(update_job_status(job_id, "STARTED", worker_id=worker_id, retry_count=current_retry))
     print(f"[{job_id}] 📊 STARTING REPORT JOB (Retry {current_retry})...")
     
     try:
@@ -126,7 +152,7 @@ def report_job(self, job_id: str, payload: dict):
             "pages": 42
         }
         
-        asyncio.run(update_job_status(job_id, "SUCCESS", result=final_result))
+        run_async(update_job_status(job_id, "SUCCESS", result=final_result))
         print(f"[{job_id}] ✅ Report generated successfully!")
         return final_result
         
@@ -136,8 +162,9 @@ def report_job(self, job_id: str, payload: dict):
             asyncio.run(update_job_status(job_id, "FAILURE", error=str(e)))
             print(f"[{job_id}] 💀 JOB FAILED PERMANENTLY")
             raise e
-        print(f"[{job_id}] ♻️ Retrying in 10 seconds...")
-        raise self.retry(exc=e, countdown=10)
+        print(f"[{job_id}] ♻️ Retrying in 5 seconds...")
+        asyncio.run(update_job_status(job_id, "RETRY"))
+        raise self.retry(exc=e, countdown=5)
     
 
 @celery_app.task(bind = True,name = 'src.worker.ai_job', max_retries = 3)
@@ -146,7 +173,7 @@ def ai_job(self, job_id : str, payload : dict):
     worker_id = self.request.hostname
     current_retry = self.request.retries
 
-    asyncio.run(update_job_status(job_id,"STARTED",retry_count = current_retry))
+    run_async(update_job_status(job_id,"STARTED", worker_id=worker_id, retry_count = current_retry))
 
     print(f"[{job_id}] 🧠 STARTING AI JOB (Retry {current_retry})...")
 
@@ -166,7 +193,7 @@ def ai_job(self, job_id : str, payload : dict):
             "analyzed_word_count": len(text_to_analyze.split())
         }
 
-        asyncio.run(update_job_status(job_id,"SUCCESS",final_result))
+        run_async(update_job_status(job_id,"SUCCESS",final_result))
 
         print(f"[{job_id}] ✅ AI JOB completed successfully!")
         return final_result        
@@ -175,12 +202,13 @@ def ai_job(self, job_id : str, payload : dict):
         print(f"[{job_id}] ❌ ERROR: {str(e)}")
 
         if self.request.retries >= self.max_retries :
-            asyncio.run(update_job_status(job_id,"FAILURE",error = str(e)))
+            run_async(update_job_status(job_id,"FAILURE",error = str(e)))
             print(f"[{job_id}] 💀 JOB FAILED PERMANENTLY")
             raise e
 
-        print(f"[{job_id}] ♻️ Retrying in 10 seconds...")
-        raise self.retry(exc=e, countdown=10) 
+        print(f"[{job_id}] ♻️ Retrying in 5 seconds...")
+        run_async(update_job_status(job_id, "RETRY"))
+        raise self.retry(exc=e, countdown=5) 
 
 
 
@@ -217,11 +245,12 @@ async def unregister_worker(worker_id : str):
 def on_worker_ready(sender, **kwargs):
 
     print(f"📡 Registering worker {sender.hostname} in the Database...") 
-    asyncio.run(register_worker(sender.hostname))
+    run_async(register_worker(sender.hostname))
 
 
 @worker_shutting_down.connect
 def on_worker_shutdown(sender, **kwargs):
-    print(f"🛑 Marking worker {sender.hostname} as offline in Database...")
-    asyncio.run(unregister_worker(sender.hostname))
-        
+    # During shutdown, Celery passes the hostname as a plain string in `sender`
+    hostname = sender if isinstance(sender, str) else getattr(sender, 'hostname', str(sender))
+    print(f"🛑 Marking worker {hostname} as offline in Database...")
+    run_async(unregister_worker(hostname))

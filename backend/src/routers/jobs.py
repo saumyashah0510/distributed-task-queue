@@ -7,8 +7,9 @@ from datetime import datetime
 
 from ..database import get_db
 from .. import models
+from .. import models
 from .. import schemas
-from ..worker import email_job,report_job,ai_job
+from ..worker import email_job,report_job,ai_job,celery_app
 
 router = APIRouter(
     prefix="/api/jobs",
@@ -25,7 +26,7 @@ PRIORITY_MAP = {
 async def create_job(job_in: schemas.JobCreate, db: AsyncSession = Depends(get_db)):
 
     job_id = str(uuid.uuid4())
-    inferred_priority = PRIORITY_MAP[job_in.type]
+    inferred_priority = job_in.priority
     target_queue = f"{inferred_priority}_priority"
 
     new_job = models.JobModel(
@@ -45,11 +46,11 @@ async def create_job(job_in: schemas.JobCreate, db: AsyncSession = Depends(get_d
 
     # triggering celery
     if job_in.type == "email":
-        email_job.apply_async(args = [job_id, job_in.payload], queue = target_queue)
+        email_job.apply_async(args = [job_id, job_in.payload], queue = target_queue, task_id = job_id)
     elif job_in.type == "report":
-        report_job.apply_async(args = [job_id, job_in.payload], queue = target_queue)
+        report_job.apply_async(args = [job_id, job_in.payload], queue = target_queue, task_id = job_id)
     elif job_in.type == "ai_analysis":
-        ai_job.apply_async(args = [job_id, job_in.payload], queue = target_queue)    
+        ai_job.apply_async(args = [job_id, job_in.payload], queue = target_queue, task_id = job_id)    
 
     return new_job
 
@@ -101,6 +102,14 @@ async def retry_job(job_id: str, db: AsyncSession = Depends(get_db)):
     job.retry_count += 1
     job.updated_at = datetime.utcnow()
     
+    target_queue = f"{job.priority}_priority"
+    if job.type == "email":
+        email_job.apply_async(args = [job.id, job.payload], queue = target_queue, task_id = job.id)
+    elif job.type == "report":
+        report_job.apply_async(args = [job.id, job.payload], queue = target_queue, task_id = job.id)
+    elif job.type == "ai_analysis":
+        ai_job.apply_async(args = [job.id, job.payload], queue = target_queue, task_id = job.id)    
+    
     await db.commit()
     await db.refresh(job)
     return job
@@ -114,12 +123,19 @@ async def revoke_job(job_id: str, db: AsyncSession = Depends(get_db)):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
         
-    if job.status not in ["PENDING", "RETRY"]:
-        raise HTTPException(status_code=400, detail="Can only revoke pending or retrying jobs")
+    if job.status not in ["PENDING", "RETRY", "STARTED"]:
+        raise HTTPException(status_code=400, detail="Can only revoke pending, retrying, or active jobs")
         
     job.status = "REVOKED"
     job.updated_at = datetime.utcnow()
     
+    celery_app.control.revoke(job_id, terminate=True)
+    
     await db.commit()
     await db.refresh(job)
     return job
+
+@router.get("/all/workers", response_model=List[schemas.WorkerResponse])
+async def list_workers(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.WorkerModel))
+    return result.scalars().all()
