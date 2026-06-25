@@ -90,7 +90,7 @@ class Store {
   connectWebSocket() {
     if (typeof window === "undefined") return; // SSR check
     
-    this.ws = new WebSocket('ws://127.0.0.1:8000/ws/dashboard');
+    this.ws = new WebSocket(`${WS_BASE_URL}/ws/dashboard`);
     this.ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       this.backendMetrics = data;
@@ -118,7 +118,7 @@ class Store {
 
   async fetchJobs() {
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/jobs/');
+      const res = await fetch(`${API_BASE_URL}/api/jobs/`);
       const data = await res.json();
       
       // Map backend data to frontend interface
@@ -129,7 +129,7 @@ class Store {
       }));
       
       try {
-        const wRes = await fetch('http://127.0.0.1:8000/api/jobs/all/workers');
+        const wRes = await fetch(`${API_BASE_URL}/api/jobs/all/workers`);
         const wData = await wRes.json();
         this.workers = wData.map((w: any) => ({
           id: w.id,
@@ -163,7 +163,7 @@ class Store {
   async submit(type: JobType, priority?: Priority, payload: Record<string, unknown> = {}) {
     const p = priority ?? TYPE_META[type].defaultPriority;
     try {
-      await fetch('http://127.0.0.1:8000/api/jobs/', {
+      await fetch(`${API_BASE_URL}/api/jobs/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -186,7 +186,7 @@ class Store {
       const p = TYPE_META[t].defaultPriority;
       const actualPayload = customPayload || { batch: true, i };
       requests.push(
-        fetch('http://127.0.0.1:8000/api/jobs/', {
+        fetch(`${API_BASE_URL}/api/jobs/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -206,7 +206,7 @@ class Store {
 
   async retry(id: string) {
     try {
-      await fetch(`http://127.0.0.1:8000/api/jobs/${id}/retry`, { method: 'POST' });
+      await fetch(`${API_BASE_URL}/api/jobs/${id}/retry`, { method: 'POST' });
       this.fetchJobs();
     } catch (err) {
       console.error("Retry failed:", err);
@@ -215,7 +215,7 @@ class Store {
 
   async revoke(id: string) {
     try {
-      await fetch(`http://127.0.0.1:8000/api/jobs/${id}/revoke`, { method: 'POST' });
+      await fetch(`${API_BASE_URL}/api/jobs/${id}/revoke`, { method: 'POST' });
       this.fetchJobs();
     } catch (err) {
       console.error("Revoke failed:", err);
