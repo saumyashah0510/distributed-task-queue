@@ -75,6 +75,7 @@ worker_id : str = None, retry_count : int = None):
                     worker = worker_res.scalars().first()
                     if worker:
                         worker.current_job_id = job.id
+                        worker.status = "busy"
             elif status in ["SUCCESS", "FAILURE", "RETRY"]:
                 if status in ["SUCCESS", "FAILURE"]:
                     job.completed_at = now
@@ -87,6 +88,7 @@ worker_id : str = None, retry_count : int = None):
                             worker.tasks_completed = models.WorkerModel.tasks_completed + 1
                         if worker.current_job_id == job.id:
                             worker.current_job_id = None
+                            worker.status = "idle"
             await db.commit()
             
     await engine.dispose()    
@@ -216,10 +218,10 @@ async def register_worker(worker_id : str):
         worker = res.scalars().first()
 
         if not worker :
-            worker = models.WorkerModel(id = worker_id, status = "active")
+            worker = models.WorkerModel(id = worker_id, status = "idle")
             db.add(worker)
         else :
-            worker.status = "active"
+            worker.status = "idle"
 
         await db.commit()
     await engine.dispose()
