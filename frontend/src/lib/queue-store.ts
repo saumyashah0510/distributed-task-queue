@@ -141,14 +141,38 @@ class Store {
         const wData = await wRes.json();
         this.workers = wData.map((w: any) => ({
           id: w.id,
-          status: w.status === 'active' ? (w.current_job_id ? 'busy' : 'idle') : 'offline',
-          tasks_completed: w.tasks_completed || 0,
-          last_seen: new Date((w.last_seen || new Date().toISOString()) + "Z").getTime(),
-          started_at: new Date((w.started_at || new Date().toISOString()) + "Z").getTime(),
-          current_job_id: w.current_job_id
+          queue: w.queues,
+          lastHeartbeat: new Date(w.last_heartbeat + "Z").getTime(),
+          jobsDone: w.successful_jobs,
+          status: w.status,
         }));
-      } catch (err) {
-        console.error("Failed to fetch workers:", err);
+        
+        // Also fetch metrics since WebSocket is disabled on Vercel!
+        const mRes = await fetch(`${API_BASE_URL}/api/metrics`);
+        const mData = await mRes.json();
+        
+        this.backendMetrics = {
+          PENDING: mData.pending_jobs || 0,
+          STARTED: mData.active_jobs || 0,
+          SUCCESS: mData.completed_jobs || 0,
+          FAILURE: mData.failed_jobs || 0,
+        };
+
+        // Update chart series
+        const now = Date.now();
+        const qd = this.queueDepths();
+        this.series.push({
+          t: now,
+          high: qd.high || 0, 
+          normal: qd.normal || 0, 
+          low: qd.low || 0,
+          completed: this.backendMetrics.SUCCESS || 0,
+        });
+        if (this.series.length > 40) this.series.shift();
+
+        this.emit();
+      } catch (e) {
+        console.error("Failed to fetch workers or metrics:", e);
       }
       
       this.emit();
