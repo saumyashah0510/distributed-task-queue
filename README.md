@@ -137,13 +137,13 @@ We aggressively stress-tested this architecture using **Locust**, generating hun
 Tested on a powerful local machine. The queue easily absorbed a burst of **500 concurrent users** maintaining 35-40 RPS. The system seamlessly distributed the jobs across all 3 priority workers with zero dropped requests.
 
 **Workers Processing Live Data:**
-![Local Dashboard Jobs](results/local_test/local_dashboard_jobs.png)
+![Local Dashboard Jobs](results/local_test/local_dashboard_chart.png)
 
 **Locust Charts (Zero Failures):**
 ![Local Locust Charts](results/local_test/local_locust_charts.png)
 
 **Dashboard Active Queue:**
-![Local Dashboard Queues](results/local_test/local_dashboard_queues.png)
+![Local Dashboard Queues](results/local_test/local_dashboard_jobs.png)
 
 
 ### ☁️ Cloud Deployment (AWS Free Tier)
