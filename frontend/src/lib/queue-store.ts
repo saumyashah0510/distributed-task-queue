@@ -145,7 +145,7 @@ class Store {
         this.workers = wData.map((w: any) => ({
           id: w.id,
           queue: w.queues || [],
-          lastHeartbeat: new Date(w.last_seen + "Z").getTime(),
+          lastHeartbeat: w.last_seen ? new Date(w.last_seen + "Z").getTime() : Date.now(),
           jobsDone: w.tasks_completed || 0,
           status: w.status,
         }));
