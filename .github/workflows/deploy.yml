@@ -11,6 +11,9 @@ jobs:
   test:
     name: Run Pytest
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "postgresql+asyncpg://dummy:dummy@localhost:5432/dummy"
+      REDIS_URL: "redis://localhost:6379"
     steps:
       - name: Checkout Code(Download all folders in VM)
         uses: actions/checkout@v4
