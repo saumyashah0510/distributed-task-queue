@@ -2,6 +2,7 @@ from random import random
 import os, time, ssl, asyncio, random
 from dotenv import load_dotenv
 from celery import Celery
+from celery.signals import worker_ready, worker_shutting_down
 from kombu import Queue
 from sqlalchemy import select
 from datetime import datetime,timezone
@@ -181,3 +182,46 @@ def ai_job(self, job_id : str, payload : dict):
         print(f"[{job_id}] ♻️ Retrying in 10 seconds...")
         raise self.retry(exc=e, countdown=10) 
 
+
+
+async def register_worker(worker_id : str):
+    async with SessionLocal() as db:
+
+        res = await db.execute(select(models.WorkerModel).filter(models.WorkerModel.id == worker_id))
+        worker = res.scalars().first()
+
+        if not worker :
+            worker = models.WorkerModel(id = worker_id, status = "active")
+            db.add(worker)
+        else :
+            worker.status = "active"
+
+        await db.commit()
+    await engine.dispose()
+
+
+async def unregister_worker(worker_id : str):
+
+    async with SessionLocal() as db:
+
+        res = await db.execute(select(models.WorkerModel).filter(models.WorkerModel.id == worker_id))
+        worker = res.scalars().first()
+
+        if worker:
+            worker.status = "offline"
+            await db.commit()
+    await engine.dispose()      
+
+
+@worker_ready.connect
+def on_worker_ready(sender, **kwargs):
+
+    print(f"📡 Registering worker {sender.hostname} in the Database...") 
+    asyncio.run(register_worker(sender.hostname))
+
+
+@worker_shutting_down.connect
+def on_worker_shutdown(sender, **kwargs):
+    print(f"🛑 Marking worker {sender.hostname} as offline in Database...")
+    asyncio.run(unregister_worker(sender.hostname))
+        
