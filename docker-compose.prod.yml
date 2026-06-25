@@ -11,20 +11,20 @@ services:
   worker_high:
     image: saumyashah05/task-queue-worker:latest
     hostname: high_worker
-    command: ["celery", "-A", "src.worker", "worker", "-Q", "high_priority", "--loglevel=info", "--without-gossip", "--without-mingle", "--without-heartbeat"]
+    command: ["celery", "-A", "src.worker", "worker", "-Q", "high_priority", "--concurrency=1", "--loglevel=info", "--without-gossip", "--without-mingle", "--without-heartbeat"]
     env_file:
       - .env
 
   worker_normal:
     image: saumyashah05/task-queue-worker:latest
     hostname: normal_worker
-    command: ["celery", "-A", "src.worker", "worker", "-Q", "normal_priority", "--loglevel=info", "--without-gossip", "--without-mingle", "--without-heartbeat"]
+    command: ["celery", "-A", "src.worker", "worker", "-Q", "normal_priority", "--concurrency=1", "--loglevel=info", "--without-gossip", "--without-mingle", "--without-heartbeat"]
     env_file:
       - .env
 
   worker_low:
     image: saumyashah05/task-queue-worker:latest
     hostname: low_worker
-    command: ["celery", "-A", "src.worker", "worker", "-Q", "low_priority", "--loglevel=info", "--without-gossip", "--without-mingle", "--without-heartbeat"]
+    command: ["celery", "-A", "src.worker", "worker", "-Q", "low_priority", "--concurrency=1", "--loglevel=info", "--without-gossip", "--without-mingle", "--without-heartbeat"]
     env_file:
       - .env        
