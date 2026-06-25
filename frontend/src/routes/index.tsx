@@ -24,13 +24,13 @@ function Dashboard() {
 
       <main className="mx-auto max-w-[1400px] space-y-8 px-6 py-10 animate-in-up">
         <div>
-          <div className="eyebrow">FC-Q Series · Real-time Operations</div>
+          <div className="eyebrow">Task Queue · Distributed Processing</div>
           <h1 className="mt-3 font-display text-5xl font-black leading-[0.95] tracking-tight md:text-6xl">
-            High Throughput<br />
-            <span className="brand-underline">Job Orchestration.</span>
+            Distributed Task<br />
+            <span className="brand-underline">Orchestrator.</span>
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Three decades of distributed-systems discipline, condensed into one console. Submit, route, and watch jobs flow through strict priority lanes — engineered for the most demanding workloads.
+            A real-time, priority-based job queue built on FastAPI, Celery, and Redis. Monitor active workloads, review past jobs, and manage task pipelines directly from this command center.
           </p>
         </div>
 

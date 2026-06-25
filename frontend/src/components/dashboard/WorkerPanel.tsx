@@ -18,7 +18,8 @@ export function WorkerPanel() {
       <ul className="grid gap-3">
         {store.workers.map((w) => {
           const job = w.current_job_id ? store.jobs.find((j) => j.id === w.current_job_id) : undefined;
-          const heartbeatAge = ((now - w.last_seen) / 1000).toFixed(0);
+          const ageSeconds = Math.floor((now - w.last_seen) / 1000);
+          const heartbeatStr = ageSeconds < 60 ? `${ageSeconds}s ago` : `${Math.floor(ageSeconds / 60)}m ago`;
           const isBusy = w.status === "busy";
           return (
             <li
@@ -36,7 +37,7 @@ export function WorkerPanel() {
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="font-mono text-sm font-medium">{w.id}</span>
                   <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {w.status} · {heartbeatAge}s ago
+                    {w.status} · {heartbeatStr}
                   </span>
                 </div>
                 <div className="mt-0.5 truncate text-xs text-muted-foreground">
