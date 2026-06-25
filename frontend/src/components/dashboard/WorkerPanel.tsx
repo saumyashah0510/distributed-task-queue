@@ -20,7 +20,7 @@ export function WorkerPanel() {
           const job = w.current_job_id ? store.jobs.find((j) => j.id === w.current_job_id) : undefined;
           const ageSeconds = Math.floor((now - w.lastHeartbeat) / 1000);
           const heartbeatStr = ageSeconds < 60 ? `${ageSeconds}s ago` : `${Math.floor(ageSeconds / 60)}m ago`;
-          const isBusy = w.status === "busy";
+          const isBusy = w.status === "active" && w.current_job_id != null;
           return (
             <li
               key={w.id}
