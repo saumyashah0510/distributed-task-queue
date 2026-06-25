@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 
-// Use environment variables for production, fallback to localhost for local dev
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
-// Convert http/https to ws/wss for the WebSocket URL
-const WS_BASE_URL = API_BASE_URL.replace(/^http/, 'ws');
+// In production (Vercel), we use an empty string so requests go to /api/... and hit the Vercel rewrite proxy (HTTPS -> HTTP)
+// In local dev, we fallback to localhost
+const API_BASE_URL = import.meta.env.PROD ? '' : 'http://127.0.0.1:8000';
+
+// Convert http/https to ws/wss, or use relative ws:// if empty
+const WS_BASE_URL = API_BASE_URL ? API_BASE_URL.replace(/^http/, 'ws') : '';
 
 export type JobType = "email" | "report" | "ai_analysis"; // Our backend type is ai_analysis
 export type Priority = "high" | "normal" | "low";
@@ -94,6 +96,7 @@ class Store {
 
   connectWebSocket() {
     if (typeof window === "undefined") return; // SSR check
+    if (!WS_BASE_URL) return; // Skip WebSockets on Vercel since Edge proxy doesn't support them well; we will just use polling!
     
     this.ws = new WebSocket(`${WS_BASE_URL}/ws/dashboard`);
     this.ws.onmessage = (event) => {
