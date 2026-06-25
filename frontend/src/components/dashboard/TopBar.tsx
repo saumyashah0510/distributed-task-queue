@@ -24,7 +24,7 @@ export function TopBar() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
             </span>
-            <span>Live · WebSocket connected</span>
+            <span>Live Sync</span>
           </div>
           <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

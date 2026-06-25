@@ -44,7 +44,7 @@ function Dashboard() {
                 <h3 className="text-sm font-medium text-primary">Cloud Demo Limits</h3>
                 <div className="mt-2 text-sm text-primary/80">
                   <p>
-                    This live cloud version runs on a free-tier AWS instance with 1GB RAM. If you send a large bulk burst, it may freeze temporarily. For maximum performance and instantaneous WebSockets, we recommend pulling the repository and running it locally via Docker Desktop!
+                    This live cloud version runs on a free-tier AWS instance with 1GB RAM. If you send a large bulk burst, it may freeze temporarily. For maximum performance, we recommend pulling the repository and running it locally via Docker Desktop!
                   </p>
                 </div>
               </div>
