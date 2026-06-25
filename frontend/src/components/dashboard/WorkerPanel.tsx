@@ -18,7 +18,7 @@ export function WorkerPanel() {
       <ul className="grid gap-3">
         {store.workers.map((w) => {
           const job = w.current_job_id ? store.jobs.find((j) => j.id === w.current_job_id) : undefined;
-          const ageSeconds = Math.floor((now - w.last_seen) / 1000);
+          const ageSeconds = Math.floor((now - w.lastHeartbeat) / 1000);
           const heartbeatStr = ageSeconds < 60 ? `${ageSeconds}s ago` : `${Math.floor(ageSeconds / 60)}m ago`;
           const isBusy = w.status === "busy";
           return (
@@ -47,7 +47,7 @@ export function WorkerPanel() {
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-display text-lg font-semibold tabular-nums">{w.tasks_completed}</div>
+                <div className="font-display text-lg font-semibold tabular-nums">{w.jobsDone}</div>
                 <div className="text-[10px] uppercase tracking-wider text-muted-foreground">done</div>
               </div>
             </li>
