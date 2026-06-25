@@ -12,12 +12,8 @@ from . import models
 
 load_dotenv()
 
-# Create a persistent event loop for the worker to avoid asyncpg 'Event loop is closed' errors
-worker_loop = asyncio.new_event_loop()
-asyncio.set_event_loop(worker_loop)
-
 def run_async(coro):
-    return worker_loop.run_until_complete(coro)
+    return asyncio.run(coro)
 
 redis_url = os.getenv("REDIS_URL")
 
@@ -87,7 +83,8 @@ worker_id : str = None, retry_count : int = None):
                     worker = worker_res.scalars().first()
                     if worker:
                         if status == "SUCCESS":
-                            worker.tasks_completed = (worker.tasks_completed or 0) + 1
+                            # Use atomic increment to prevent race conditions across 24 concurrent processes
+                            worker.tasks_completed = models.WorkerModel.tasks_completed + 1
                         if worker.current_job_id == job.id:
                             worker.current_job_id = None
             await db.commit()

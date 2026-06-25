@@ -178,12 +178,13 @@ class Store {
     }
   }
 
-  async bulkSubmit(n = 60, specificType?: JobType) {
+  async bulkSubmit(n = 60, specificType?: JobType, customPayload?: Record<string, unknown>) {
     const types: JobType[] = ["email", "report", "ai_analysis"];
     const requests = [];
     for (let i = 0; i < n; i++) {
       const t = specificType || types[Math.floor(Math.random() * types.length)];
       const p = TYPE_META[t].defaultPriority;
+      const actualPayload = customPayload || { batch: true, i };
       requests.push(
         fetch('http://127.0.0.1:8000/api/jobs/', {
           method: 'POST',
@@ -191,7 +192,7 @@ class Store {
           body: JSON.stringify({
             type: t,
             priority: p,
-            payload: { batch: true, i }
+            payload: actualPayload
           })
         })
       );

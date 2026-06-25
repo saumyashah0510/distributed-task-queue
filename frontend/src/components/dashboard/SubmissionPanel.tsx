@@ -44,7 +44,14 @@ export function SubmissionPanel() {
   };
 
   const bulk = () => {
-    store.bulkSubmit(bulkCount, type);
+    let parsed: Record<string, unknown> = {};
+    try {
+      parsed = JSON.parse(payload || "{}");
+    } catch {
+      toast.error("Invalid JSON payload");
+      return;
+    }
+    store.bulkSubmit(bulkCount, type, parsed);
     toast.success("Bulk submitted", { description: `${bulkCount} ${typeMeta[type].label} jobs queued` });
   };
 

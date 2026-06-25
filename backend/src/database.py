@@ -21,11 +21,24 @@ elif SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
 if "?" in SQLALCHEMY_DATABASE_URL:
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.split("?")[0]
 
-# Create the async engine
-engine = create_async_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"ssl": True}
-)
+import sys
+from sqlalchemy.pool import NullPool
+
+# Only disable connection pooling for Celery workers to avoid prefork crashes.
+# We MUST leave pooling enabled for FastAPI, otherwise the websocket crawls!
+use_nullpool = "celery" in sys.argv[0] or "celery" in sys.executable
+
+if use_nullpool:
+    engine = create_async_engine(
+        SQLALCHEMY_DATABASE_URL,
+        connect_args={"ssl": True},
+        poolclass=NullPool
+    )
+else:
+    engine = create_async_engine(
+        SQLALCHEMY_DATABASE_URL,
+        connect_args={"ssl": True}
+    )
 
 # Configure the async session
 SessionLocal = sessionmaker(
