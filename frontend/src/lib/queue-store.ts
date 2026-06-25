@@ -88,10 +88,13 @@ class Store {
     this.connectWebSocket();
     this.fetchJobs();
     
-    // Poll API for jobs every 3 seconds to keep table updated
+    // Initial fetch so it doesn't stay at 0 for the first few seconds
+    this.fetchJobs();
+    
+    // Fast polling fallback if WebSockets fail
     this.pollingInterval = setInterval(() => {
       this.fetchJobs();
-    }, 3000);
+    }, 1000);
   }
 
   connectWebSocket() {
