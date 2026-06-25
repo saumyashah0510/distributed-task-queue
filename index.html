@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Queue Dashboard</title>
+</head>
+
+<body>
+    <h1>Live Dashboard</h1>
+    <pre id="metrics" style="font-size: 20px;"></pre>
+
+    <script>
+        // Connect to your FastAPI WebSocket
+        const ws = new WebSocket("ws://127.0.0.1:8000/ws/dashboard");
+
+        ws.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            document.getElementById("metrics").innerText = JSON.stringify(data, null, 4);
+        };
+    </script>
+</body>
+
+</html>

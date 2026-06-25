@@ -1,4 +1,5 @@
-import os, time, ssl, asyncio
+from random import random
+import os, time, ssl, asyncio, random
 from dotenv import load_dotenv
 from celery import Celery
 from kombu import Queue
@@ -12,6 +13,8 @@ load_dotenv()
 
 redis_url = os.getenv("REDIS_URL")
 
+IS_DEMO_MODE = os.getenv("DEMO_MODE","False").lower() == "true"
+SLEEP_MULTIPLIER = 0.3 if IS_DEMO_MODE else 1.0
 
 celery_app = Celery(
     "tasks",
@@ -75,10 +78,13 @@ def email_job(self, job_id: str, payload: dict):
     print(f"[{job_id}] 📧 STARTING EMAIL JOB (Retry {current_retry})...")
     
     try:
-        time.sleep(3)
+        time.sleep(3 * SLEEP_MULTIPLIER)
         # We can simulate an error here if "fail" is in the subject
         if "fail" in payload.get("subject", "").lower():
             raise ConnectionError("SMTP server timeout!")
+
+        if random.random() < 0.10:
+            raise RuntimeError("Chaos Engineering : Random simulated failure")    
 
         final_result = {"status": "sent", "to": payload.get("to", "unknown")}
         asyncio.run(update_job_status(job_id, "SUCCESS", result=final_result))
@@ -105,10 +111,13 @@ def report_job(self, job_id: str, payload: dict):
     print(f"[{job_id}] 📊 STARTING REPORT JOB (Retry {current_retry})...")
     
     try:
-        time.sleep(7)
+        time.sleep(7 * SLEEP_MULTIPLIER)
         fmt = payload.get("format", "pdf")
         if fmt not in ["pdf", "csv"]:
             raise ValueError(f"Unsupported report format: {fmt}")
+
+        if random.random() < 0.10:
+            raise RuntimeError("Chaos Engineering : Random simulated failure")    
 
         final_result = {
             "status": "generated", 
@@ -141,11 +150,14 @@ def ai_job(self, job_id : str, payload : dict):
     print(f"[{job_id}] 🧠 STARTING AI JOB (Retry {current_retry})...")
 
     try :
-        time.sleep(12)
+        time.sleep(12 * SLEEP_MULTIPLIER)
         text_to_analyze = payload.get("text", "")
     
         if "crash" in text_to_analyze.lower():
             raise ValueError("AI Model encountered an unexpected error!")
+
+        if random.random() < 0.10:
+            raise RuntimeError("Chaos Engineering : Random simulated failure")    
 
         final_result = {
             "sentiment": "positive",
