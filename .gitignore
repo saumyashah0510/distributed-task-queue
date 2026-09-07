@@ -1,2 +1,7 @@
 task-queue-key.pem
 docker-access-token
+
+# Terraform ignores
+.terraform/
+*.tfstate
+*.tfstate.backup
