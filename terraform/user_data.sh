@@ -11,8 +11,8 @@ apt-get install -y apt-transport-https ca-certificates curl software-properties-
 # 2. Install docker
 apt-get install -y docker.io
 
-# 3. Install docker compose plugin
-apt-get install -y docker-compose-plugin
+# 3. Install docker compose
+apt-get install -y docker-compose
 
 # 4. Start and enable Docker service on boot
 systemctl start docker
