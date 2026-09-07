@@ -11,8 +11,11 @@ apt-get install -y apt-transport-https ca-certificates curl software-properties-
 # 2. Install docker
 apt-get install -y docker.io
 
-# 3. Install docker compose
-apt-get install -y docker-compose
+# 3. Install official Docker Compose V2 binary
+mkdir -p /usr/local/lib/docker/cli-plugins
+curl -SL https://github.com/docker/compose/releases/download/v2.29.1/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
+chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/bin/docker-compose
 
 # 4. Start and enable Docker service on boot
 systemctl start docker
