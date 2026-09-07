@@ -78,7 +78,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd distributed-task-queue
-            sudo docker compose pull
-            sudo docker compose up -d
+            sudo docker-compose pull || sudo docker compose pull
+            sudo docker-compose up -d || sudo docker compose up -d
                       
                                    
