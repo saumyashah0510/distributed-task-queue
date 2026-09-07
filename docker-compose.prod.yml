@@ -3,6 +3,7 @@ version : '3.8'
 services:
   api:
     image: saumyashah05/task-queue-api:latest
+    restart: always
     ports: 
       - "8000:8000"
     env_file:
@@ -10,6 +11,7 @@ services:
 
   worker_high:
     image: saumyashah05/task-queue-worker:latest
+    restart: always
     hostname: high_worker
     command: ["celery", "-A", "src.worker", "worker", "-Q", "high_priority", "--concurrency=1", "--loglevel=info", "--without-gossip", "--without-mingle", "--without-heartbeat"]
     env_file:
@@ -17,6 +19,7 @@ services:
 
   worker_normal:
     image: saumyashah05/task-queue-worker:latest
+    restart: always
     hostname: normal_worker
     command: ["celery", "-A", "src.worker", "worker", "-Q", "normal_priority", "--concurrency=1", "--loglevel=info", "--without-gossip", "--without-mingle", "--without-heartbeat"]
     env_file:
@@ -24,6 +27,7 @@ services:
 
   worker_low:
     image: saumyashah05/task-queue-worker:latest
+    restart: always
     hostname: low_worker
     command: ["celery", "-A", "src.worker", "worker", "-Q", "low_priority", "--concurrency=1", "--loglevel=info", "--without-gossip", "--without-mingle", "--without-heartbeat"]
     env_file:
